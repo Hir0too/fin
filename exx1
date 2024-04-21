@@ -1,0 +1,51 @@
+(function(global) {
+
+  // Créer un espace de nom pour notre utilitaire
+  var ajaxUtils = {};
+
+  // Retourne un objet de requête HTTP
+  function getRequestObject() {
+    if (window.XMLHttpRequest) {
+      return new XMLHttpRequest();
+    } 
+    else if (window.ActiveXObject) {
+      // Pour de très anciens navigateurs IE (optionnel)
+      return new ActiveXObject("Microsoft.XMLHTTP");
+    } 
+    else {
+      global.alert("Ajax n'est pas pris en charge !");
+      return null; 
+    }
+  }
+
+  // Effectue une requête Ajax GET vers 'requestUrl'
+  ajaxUtils.sendGetRequest = function(requestUrl, responseHandler, isJsonResponse) {
+    var request = getRequestObject();
+    request.onreadystatechange = function() { 
+      handleResponse(request, responseHandler, isJsonResponse); 
+    };
+    request.open("GET", requestUrl, true);
+    request.send(null); // pour POST uniquement
+  };
+
+  // Appelle uniquement la fonction 'responseHandler' fournie par l'utilisateur
+  // si la réponse est prête et qu'il n'y a pas d'erreur
+  function handleResponse(request, responseHandler, isJsonResponse) {
+    if ((request.readyState == 4) && (request.status == 200)) {
+      // Par défaut, isJsonResponse = true
+      if (isJsonResponse === undefined) {
+        isJsonResponse = true;
+      }
+      if (isJsonResponse) {
+        responseHandler(JSON.parse(request.responseText));
+      }
+      else {
+        responseHandler(request.responseText);
+      }
+    }
+  }
+
+  // Exposer l'utilitaire à l'objet global
+  global.$ajaxUtils = ajaxUtils;
+
+})(window);

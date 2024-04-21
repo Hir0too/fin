@@ -1,0 +1,91 @@
+$(function () {
+  // Même chose que document.addEventListener("DOMContentLoaded"...
+
+  // Même chose que document.querySelector("#navbarToggle").addEventListener("blur",...
+  $("#navbarToggle").blur(function (event) {
+    var screenWidth = window.innerWidth;
+    if (screenWidth < 768) {
+      $("#collapsable-nav").collapse('hide');
+    }
+  });
+});
+
+(function (global) {
+  var dc = {};
+
+  var homeHtmlUrl = "snippets/home-snippet.html";
+  var allCategoriesUrl = "https://coursera-jhu-default-rtdb.firebaseio.com/categories.json";
+  var categoriesTitleHtml = "snippets/categories-title-snippet.html";
+  var categoryHtml = "snippets/category-snippet.html";
+  var menuItemsUrl = "https://coursera-jhu-default-rtdb.firebaseio.com/menu_items/";
+  var menuItemsTitleHtml = "snippets/menu-items-title.html";
+  var menuItemHtml = "snippets/menu-item.html";
+
+  // Fonction de commodité pour insérer du HTML dans un élément cible
+  var insertHtml = function (selector, html) {
+    var targetElem = document.querySelector(selector);
+    targetElem.innerHTML = html;
+  };
+
+  // Affiche une icône de chargement à l'intérieur de l'élément identifié par 'selector'.
+  var showLoading = function (selector) {
+    var html = "<div class='text-center'>";
+    html += "<img src='images/ajax-loader.gif'></div>";
+    insertHtml(selector, html);
+  };
+
+  // Remplace '{{propName}}' par propValue dans la 'string' donnée
+  var insertProperty = function (string, propName, propValue) {
+    var propToReplace = "{{" + propName + "}}";
+    string = string.replace(new RegExp(propToReplace, "g"), propValue);
+    return string;
+  };
+
+  // Supprime la classe 'active' de l'accueil et passe au bouton Menu
+  var switchMenuToActive = function () {
+    // Supprime 'active' du bouton Accueil
+    var classes = document.querySelector("#navHomeButton").className;
+    classes = classes.replace(new RegExp("active", "g"), "");
+    document.querySelector("#navHomeButton").className = classes;
+
+    // Ajoute 'active' au bouton Menu s'il n'y est pas déjà
+    classes = document.querySelector("#navMenuButton").className;
+    if (classes.indexOf("active") === -1) {
+      classes += " active";
+      document.querySelector("#navMenuButton").className = classes;
+    }
+  };
+
+  // Au chargement de la page (avant les images ou le CSS)
+  document.addEventListener("DOMContentLoaded", function (event) {
+    // Sur le premier chargement, afficher la vue d'accueil
+    showLoading("#main-content");
+    $ajaxUtils.sendGetRequest(
+      allCategoriesUrl,
+      buildAndShowHomeHTML,
+      true
+    );
+  });
+
+  // Construit et affiche le HTML de la page d'accueil en fonction des catégories renvoyées du serveur
+  function buildAndShowHomeHTML(categories) {
+    $ajaxUtils.sendGetRequest(
+      homeHtmlUrl,
+      function (homeHtml) {
+        var chosenCategory = chooseRandomCategory(categories);
+        var homeHtmlToInsertIntoMainPage = insertProperty(homeHtml, "randomCategoryShortName", chosenCategory.short_name);
+        insertHtml("#main-content", homeHtmlToInsertIntoMainPage);
+      },
+      false
+    );
+  }
+
+  // Choisis une catégorie aléatoire parmi les catégories fournies
+  function chooseRandomCategory(categories) {
+    var randomIndex = Math.floor(Math.random() * categories.length);
+    return categories[randomIndex];
+  }
+
+  // Expose les fonctions publiques
+  global.$dc = dc;
+})(window);
